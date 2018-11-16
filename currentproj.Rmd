@@ -1,0 +1,85 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(gam)
+library(psych)
+library(GPArotation)
+library(splines)
+setwd('C:\\Users\\user\\Documents\\Database')
+data <- read.csv('BeijingPM25.csv')
+head(data)
+
+#Log scale
+skew(data$pm2.5)
+pm.log <-log(data$pm2.5) #pm 2.5 is highly right skewed. 
+hist(pm.log)
+
+#Data cleaning
+attributes <- data[-c(1:24), 6:13]
+attributes <- attributes[, -5]
+
+#Correlation matrix
+cor(attributes) #Obesrvation: DEWP, TEMP, PRES are highly correlated
+
+#Dimension reduction: Factor analysis
+fit<-principal(r=attributes, nfactors=6,rotate="varimax")
+fit #Oservation: Factor analysis result verifies that we can create new variable from DEWP, TEMP and PRES without losing many information.
+
+#Linear model on all variables
+fit <- lm(data$pm2.5~data$Is+data$Ir+data$DEWP+data$TEMP+data$cbwd+data$Iws)
+summary(fit) #All variables are significant under t test. Still, we need to reduce the dimension and re-do this part.
+plot(fit$residuals, main='Residual plots', ylab='Residuals', pch='.', col='blue') #Residuals are also skewd. We may consider a log model if we need linear model for inference
+
+#nonlinear model on all variables: exists
+fit2 <- gam(data$pm2.5~s(data$Is, 1)+ s(data$Ir, 1)+ s(data$DEWP, 1)+ s(data$TEMP, 2)+  s(data$Iws, 1))
+summary(fit2)
+fit3 <- gam(data$pm2.5~s(data$Is, 3)+ s(data$Ir, 3)+ s(data$DEWP, 3)+ s(data$TEMP, 2)+  s(data$Iws, 3))
+summary(fit3)
+fit4 <- gam(data$pm2.5~s(data$Is, 3)+ s(data$Ir, 2)+ s(data$DEWP, 2)+ s(data$TEMP, 2)+  s(data$Iws, 2))
+summary(fit4)
+#Both linear and nonlinear models are significant under nonparametric table of F test. We need to pick one to forecast by cross validation. 
+
+#Time series plot
+time.pm <- 1:length(data$pm2.5)
+plot(time.pm, data$pm2.5, type='l', col='grey')
+
+#Local regression for different spans
+for (i in c(0.1, 0.3, 0.5)){
+  fit.lr <- loess(data$pm2.5~time.pm, span=i)
+  lines(fit.lr$fitted, type='l', col=runif(3, 10, 100))  
+}
+
+#Cubic spline
+fit.sp3 <- lm(data$pm2.5~bs(time.pm, knots=seq(0, length(data$pm2.5), 3000)))
+plot(time.pm, data$pm2.5, type='l', col='grey')
+lines(fit.sp3$fitted.values, type='l', col='red')
+
+# Remark on data set attributes:
+# No: row number
+# year: year of data in this row
+# month: month of data in this row
+# day: day of data in this row
+# hour: hour of data in this row
+# pm2.5: PM2.5 concentration (ug/m^3)
+# DEWP: Dew Point (a?????)
+# TEMP: Temperature (a?????)
+# PRES: Pressure (hPa)
+# cbwd: Combined wind direction
+# Iws: Cumulated wind speed (m/s)
+# Is: Cumulated hours of snow
+# Ir: Cumulated hours of rain 
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
