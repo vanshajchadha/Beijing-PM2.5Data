@@ -12,8 +12,15 @@ library(gam)
 library(psych)
 library(GPArotation)
 library(splines)
-setwd('C:\\Users\\user\\Documents\\Database')
+#setwd('C:\\Users\\user\\Documents\\Database')
+setwd('/Users/vanshajchadha/Documents/Database/')
 data <- read.csv('BeijingPM25.csv')
+head(data)
+
+#Replacing the missing values with mean of the column
+data$pm2.5[is.na(data$pm2.5)] = mean(data$pm2.5, na.rm = TRUE)
+#Rounding the value to 2 decimal places
+data$pm2.5 = round(data$pm2.5, 2)
 head(data)
 
 #Log scale
