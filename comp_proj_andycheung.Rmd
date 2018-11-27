@@ -9,7 +9,8 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 
 ```{r}
 library(mice)
-setwd('C:\\Users\\user\\Documents\\Database') #Change your path here
+#setwd('C:\\Users\\user\\Documents\\Database') #Change your path here
+setwd('/Users/edisonlo/Desktop/Stat_project/Beijing-PM2.5Data/')
 data <- read.csv('BeijingPM25.csv')
 head(data)
 
@@ -60,6 +61,128 @@ dataPCA$cbwd <- factor(dataPCA$cbwd, levels=c('cv', 'NE', 'NW', 'SE'))
 fitlm <- lm(formula = pm2.5 ~ PC1+PC2+PC3+PC4+cbwd, data=dataPCA)
 summary(fitlm)
 ```
+```{r}
+
+
+
+
+# Do cross validation
+# Randomly shuffle the data
+cv.data <-dataPCA[sample(nrow(dataPCA)),]
+View(cv.data)
+#Create 10 equally size folds
+folds <- cut(seq(1,nrow(dataPCA)),breaks=10,labels=FALSE)
+cv.errors=matrix( rep( 0, len=10), nrow = 1)
+cv.errors
+#Perform 10 fold cross validation
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm( pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd, data=trainData)
+    y <- lm( pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd, data=testData)
+    
+    pred.pm2.5.predict <- predict(pred,trainData)
+    y.pm2.5.predict <-predict(y,testData)
+     
+    pred.pm2.5 = mean(pred.pm2.5.predict)
+    y.pm2.5    = mean(y.pm2.5.predict)
+    cv.errors[i] = mean((y.pm2.5-pred.pm2.5)^2)
+}
+mse.1 = mean(cv.errors)
+mse.1
+
+fit.lm1 <- lm( pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd,  data=dataPCA)
+summary(fit.lm1)
+
+# For pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd
+# MSE = 1.7974
+# p-value < 2.2e-16 
+# Adj R^2 = 0.09654
+
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+    
+    pred <-  lm( pm2.5 ~ PC1^3 + PC2^2 + PC3 + PC4 + cbwd, data=trainData)
+    y <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3 + PC4 + cbwd, data=testData)
+    
+    pred.pm2.5.predict <- predict(pred,trainData)
+    y.pm2.5.predict <-predict(y,testData)
+     
+    pred.pm2.5 = mean(pred.pm2.5.predict)
+    y.pm2.5    = mean(y.pm2.5.predict)
+    cv.errors[i] = mean((y.pm2.5-pred.pm2.5)^2)
+}
+mse.2 = mean(cv.errors)
+mse.2
+
+fit.lm2 <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3 + PC4 + cbwd,  data=dataPCA)
+summary(fit.lm2)
+# For pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd
+# MSE = 1.7974
+# p-value < 2.2e-16 
+# Adj R^2 = 0.09654
+
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+    
+    pred <-  lm( pm2.5 ~ PC1^3 + PC2^2 + PC3^2 + PC4 + cbwd, data=trainData)
+    y <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3^2 + PC4 + cbwd, data=testData)
+    
+    pred.pm2.5.predict <- predict(pred,trainData)
+    y.pm2.5.predict <-predict(y,testData)
+     
+    pred.pm2.5 = mean(pred.pm2.5.predict)
+    y.pm2.5    = mean(y.pm2.5.predict)
+    cv.errors[i] = mean((y.pm2.5-pred.pm2.5)^2)
+}
+mse.2 = mean(cv.errors)
+mse.2
+
+fit.lm2 <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3^2 + PC4 + cbwd,  data=dataPCA)
+summary(fit.lm2)
+# For pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd
+# MSE = 1.7974
+# p-value < 2.2e-16 
+# Adj R^2 = 0.09654
+
+
+
+# The following code is found by using library
+# but not sure how to plug in custom model
+# Interested may look at 
+# https://stackoverflow.com/questions/10399792/stratified-10-fold-cross-validation/23674455
+# and official doc
+
+# library(caret)
+# model <- train(pm2.5 ~ .-year-month-day-hour,dataPCA, method="lm", 
+#                trControl = trainControl(
+#                  method = "cv", number = 10,
+#                  verboseIter = TRUE
+#                )
+# )
+# summary(model)
+# 
+# 
+# data <- dataPCA[1:5]
+# data
+# nrow(dataPCA)
+# train_index <- createDataPartition(dataPCA$pm2.5,
+#                                    p = 0.8,
+#                                    list = FALSE,
+#                                    times = 10)
+# head(train_index)
+
+```
+
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
