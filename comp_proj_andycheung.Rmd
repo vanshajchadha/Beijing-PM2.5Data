@@ -72,7 +72,7 @@ cv.data <-dataPCA[sample(nrow(dataPCA)),]
 View(cv.data)
 #Create 10 equally size folds
 folds <- cut(seq(1,nrow(dataPCA)),breaks=10,labels=FALSE)
-cv.errors=matrix( rep( 0, len=10), nrow = 1)
+cv.errors=matrix(rep( 0, len=10), nrow = 1)
 cv.errors
 #Perform 10 fold cross validation
 
@@ -81,8 +81,8 @@ for(i in 1:10){
     testData <- cv.data[testIndexes, ]
     trainData <- cv.data[-testIndexes, ]
    
-    pred <-  lm( pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd, data=trainData)
-    y <- lm( pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd, data=testData)
+    pred <-  lm(pm2.5 ~ poly(PC1,3), data=trainData)
+    y <- lm(pm2.5 ~ poly(PC1,3), data=testData)
     
     pred.pm2.5.predict <- predict(pred,trainData)
     y.pm2.5.predict <-predict(y,testData)
@@ -94,22 +94,22 @@ for(i in 1:10){
 mse.1 = mean(cv.errors)
 mse.1
 
-fit.lm1 <- lm( pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd,  data=dataPCA)
+fit.lm1 <- lm(pm2.5 ~ poly(PC1,3), data=dataPCA)
 summary(fit.lm1)
 
-# For pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd
+# For pm2.5 ~ poly(PC1,3)
 # MSE = 1.7974
 # p-value < 2.2e-16 
-# Adj R^2 = 0.09654
+# Adj R^2 = 0.03876
 
 
 for(i in 1:10){
     testIndexes <- which(folds==i,arr.ind=TRUE)
     testData <- cv.data[testIndexes, ]
     trainData <- cv.data[-testIndexes, ]
-    
-    pred <-  lm( pm2.5 ~ PC1^3 + PC2^2 + PC3 + PC4 + cbwd, data=trainData)
-    y <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3 + PC4 + cbwd, data=testData)
+   
+    pred <-  lm(pm2.5 ~ poly(PC1,2), data=trainData)
+    y <- lm(pm2.5 ~ poly(PC1,2), data=testData)
     
     pred.pm2.5.predict <- predict(pred,trainData)
     y.pm2.5.predict <-predict(y,testData)
@@ -121,21 +121,22 @@ for(i in 1:10){
 mse.2 = mean(cv.errors)
 mse.2
 
-fit.lm2 <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3 + PC4 + cbwd,  data=dataPCA)
+fit.lm2 <- lm(pm2.5 ~ poly(PC1,2), data=dataPCA)
 summary(fit.lm2)
-# For pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd
+
+# For pm2.5 ~ poly(PC1,3)
 # MSE = 1.7974
 # p-value < 2.2e-16 
-# Adj R^2 = 0.09654
+# Adj R^2 = 0.03499
 
 
 for(i in 1:10){
     testIndexes <- which(folds==i,arr.ind=TRUE)
     testData <- cv.data[testIndexes, ]
     trainData <- cv.data[-testIndexes, ]
-    
-    pred <-  lm( pm2.5 ~ PC1^3 + PC2^2 + PC3^2 + PC4 + cbwd, data=trainData)
-    y <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3^2 + PC4 + cbwd, data=testData)
+   
+    pred <-  lm(pm2.5 ~ poly(PC2,2), data=trainData)
+    y <- lm(pm2.5 ~ poly(PC2,2), data=testData)
     
     pred.pm2.5.predict <- predict(pred,trainData)
     y.pm2.5.predict <-predict(y,testData)
@@ -144,16 +145,18 @@ for(i in 1:10){
     y.pm2.5    = mean(y.pm2.5.predict)
     cv.errors[i] = mean((y.pm2.5-pred.pm2.5)^2)
 }
-mse.2 = mean(cv.errors)
-mse.2
+mse.3 = mean(cv.errors)
+mse.3
 
-fit.lm2 <- lm( pm2.5 ~ PC1^3 + PC2^2 + PC3^2 + PC4 + cbwd,  data=dataPCA)
-summary(fit.lm2)
-# For pm2.5 ~ PC1^2 + PC2^2 + PC3 + PC4 + cbwd
+
+
+fit.lm3 <- lm(pm2.5 ~ poly(PC2,2), data=dataPCA)
+summary(fit.lm3)
+
+# For pm2.5 ~ poly(PC2,2)
 # MSE = 1.7974
-# p-value < 2.2e-16 
-# Adj R^2 = 0.09654
-
+# p-value = 0.5668  // insignificant
+# Adj R^2 = -1.973e-05 
 
 
 # The following code is found by using library
