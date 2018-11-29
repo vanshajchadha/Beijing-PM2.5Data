@@ -1,6 +1,10 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
@@ -9,6 +13,7 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 
 ```{r}
 library(mice)
+set.seed(3356) 
 #setwd('C:\\Users\\user\\Documents\\Database') #Change your path here
 setwd('/Users/edisonlo/Desktop/Stat_project/Beijing-PM2.5Data/')
 data <- read.csv('BeijingPM25.csv')
@@ -18,6 +23,7 @@ md.pattern(data)
 ```
 
 ```{r}
+set.seed(3356) 
 #Modification on missing data code
 #Replace missing value with the mean of pm2.5 in the corresponding year
 dataCleaned <- data
@@ -32,6 +38,7 @@ md.pattern(dataCleaned)
 ```
 
 ```{r}
+set.seed(3356) 
 #Correlation matrix of continuous variables (ContVar)
 dataContVar <- data[, c(7:9, 11:13)]
 cor(dataContVar)
@@ -40,6 +47,7 @@ cor(dataContVar)
 ```
 
 ```{r}
+set.seed(3356) 
 #PCA dimension reduction
 fit <- prcomp(dataContVar, scale. = T)
 summary(fit) #4 pc solution, retain ~94% information
@@ -57,106 +65,297 @@ write.csv(dataPCA, file="DataCleaned.csv", row.names=FALSE)
 ```
 
 ```{r}
+set.seed(3356) 
 dataPCA$cbwd <- factor(dataPCA$cbwd, levels=c('cv', 'NE', 'NW', 'SE'))
 fitlm <- lm(formula = pm2.5 ~ PC1+PC2+PC3+PC4+cbwd, data=dataPCA)
 summary(fitlm)
+
+
+folds <- cut(seq(1,nrow(dataPCA)),breaks=10,labels=FALSE)
+cv.data <-dataPCA[sample(nrow(dataPCA)),]
+cv.errors=matrix(rep( 0, len=10), nrow = 1)
+#cv.errors
+#Perform 10 fold cross validation
+
+##################################################################################################
+###############                    1st model:  PC1+PC2+PC3+PC4+cbwd                  #############
+##################################################################################################
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm(pm2.5 ~ PC1+PC2+PC3+PC4+cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ PC1+PC2+PC3+PC4+cbwd, data=testData)
+    
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
+     
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
+}
+test_mse.1 = mean(cv.errors)
+test_mse.1
+
+fit.lm1 <- lm(pm2.5 ~ PC1+PC2+PC3+PC4+cbwd, data=dataPCA)
+summary(fit.lm1)
+# Test MSE = 2.335974
+# p-value < 2.2e-16 
+# Adj R^2 = 0.09654
 ```
 ```{r}
-
-
-
+set.seed(3356) 
 
 # Do cross validation
 # Randomly shuffle the data
 cv.data <-dataPCA[sample(nrow(dataPCA)),]
-View(cv.data)
+#View(cv.data)
 #Create 10 equally size folds
 folds <- cut(seq(1,nrow(dataPCA)),breaks=10,labels=FALSE)
 cv.errors=matrix(rep( 0, len=10), nrow = 1)
-cv.errors
+#cv.errors
 #Perform 10 fold cross validation
 
-for(i in 1:10){
-    testIndexes <- which(folds==i,arr.ind=TRUE)
-    testData <- cv.data[testIndexes, ]
-    trainData <- cv.data[-testIndexes, ]
-   
-    pred <-  lm(pm2.5 ~ poly(PC1,3), data=trainData)
-    y <- lm(pm2.5 ~ poly(PC1,3), data=testData)
-    
-    pred.pm2.5.predict <- predict(pred,trainData)
-    y.pm2.5.predict <-predict(y,testData)
-     
-    pred.pm2.5 = mean(pred.pm2.5.predict)
-    y.pm2.5    = mean(y.pm2.5.predict)
-    cv.errors[i] = mean((y.pm2.5-pred.pm2.5)^2)
-}
-mse.1 = mean(cv.errors)
-mse.1
-
-fit.lm1 <- lm(pm2.5 ~ poly(PC1,3), data=dataPCA)
-summary(fit.lm1)
-
-# For pm2.5 ~ poly(PC1,3)
-# MSE = 1.7974
-# p-value < 2.2e-16 
-# Adj R^2 = 0.03876
-
+##################################################################################################
+###############   2nd model: pm2.5 ~ poly(PC1,2) + poly(PC2,2) + PC3 + PC4 + cbwd    #############
+##################################################################################################
 
 for(i in 1:10){
     testIndexes <- which(folds==i,arr.ind=TRUE)
     testData <- cv.data[testIndexes, ]
     trainData <- cv.data[-testIndexes, ]
    
-    pred <-  lm(pm2.5 ~ poly(PC1,2), data=trainData)
-    y <- lm(pm2.5 ~ poly(PC1,2), data=testData)
+    pred <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + PC3 + PC4 + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + PC3 + PC4 + cbwd, data=testData)
     
-    pred.pm2.5.predict <- predict(pred,trainData)
-    y.pm2.5.predict <-predict(y,testData)
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
      
-    pred.pm2.5 = mean(pred.pm2.5.predict)
-    y.pm2.5    = mean(y.pm2.5.predict)
-    cv.errors[i] = mean((y.pm2.5-pred.pm2.5)^2)
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
 }
-mse.2 = mean(cv.errors)
-mse.2
+test_mse.2 = mean(cv.errors)
+test_mse.2
 
-fit.lm2 <- lm(pm2.5 ~ poly(PC1,2), data=dataPCA)
+fit.lm2 <- lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + PC3 + PC4 + cbwd, data=dataPCA)
 summary(fit.lm2)
 
-# For pm2.5 ~ poly(PC1,3)
-# MSE = 1.7974
+# Test MSE = 1.275483
 # p-value < 2.2e-16 
-# Adj R^2 = 0.03499
+# Adj R^2 = 0.1047
 
+
+
+##################################################################################################
+###############   3rd model: pm2.5 ~ poly(PC1,3) + poly(PC2,2) + PC3 + PC4 + cbwd    #############
+##################################################################################################
 
 for(i in 1:10){
     testIndexes <- which(folds==i,arr.ind=TRUE)
     testData <- cv.data[testIndexes, ]
     trainData <- cv.data[-testIndexes, ]
    
-    pred <-  lm(pm2.5 ~ poly(PC2,2), data=trainData)
-    y <- lm(pm2.5 ~ poly(PC2,2), data=testData)
+    pred <-  lm(pm2.5 ~ poly(PC1,3) + poly(PC2,2) + PC3 + PC4 + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,3) + poly(PC2,2) + PC3 + PC4 + cbwd, data=testData)
     
-    pred.pm2.5.predict <- predict(pred,trainData)
-    y.pm2.5.predict <-predict(y,testData)
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
      
-    pred.pm2.5 = mean(pred.pm2.5.predict)
-    y.pm2.5    = mean(y.pm2.5.predict)
-    cv.errors[i] = mean((y.pm2.5-pred.pm2.5)^2)
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
 }
-mse.3 = mean(cv.errors)
-mse.3
+test_mse.3 = mean(cv.errors)
+test_mse.3
 
-
-
-fit.lm3 <- lm(pm2.5 ~ poly(PC2,2), data=dataPCA)
+fit.lm3 <- lm(pm2.5 ~ poly(PC1,3) + poly(PC2,2) + PC3 + PC4 + cbwd, data=dataPCA)
 summary(fit.lm3)
 
-# For pm2.5 ~ poly(PC2,2)
-# MSE = 1.7974
-# p-value = 0.5668  // insignificant
-# Adj R^2 = -1.973e-05 
+# Test MSE = 1.284531
+# p-value < 2.2e-16 
+# Adj R^2 = 0.1047
+
+##################################################################################################
+###############   4th model: pm2.5 ~ poly(PC1,3) + poly(PC2,3) + PC3 + PC4 + cbwd    #############
+##################################################################################################
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm(pm2.5 ~ poly(PC1,3) + poly(PC2,3) + PC3 + PC4 + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,3) + poly(PC2,3) + PC3 + PC4 + cbwd, data=testData)
+    
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
+     
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
+}
+test_mse.4 = mean(cv.errors)
+test_mse.4
+
+fit.lm4 <- lm(pm2.5 ~ poly(PC1,3) + poly(PC2,3) + PC3 + PC4 + cbwd, data=dataPCA)
+summary(fit.lm4)
+
+# Test MSE = 1.284531
+# p-value < 2.2e-16 
+# Adj R^2 = 0.1059
+
+
+
+##################################################################################################
+###############   5th model: pm2.5 ~ poly(PC1,4) + poly(PC2,3) + PC3 + PC4 + cbwd    #############
+##################################################################################################
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm(pm2.5 ~ poly(PC1,4) + poly(PC2,3) + PC3 + PC4 + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,4) + poly(PC2,3) + PC3 + PC4 + cbwd, data=testData)
+    
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
+     
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
+}
+test_mse.5 = mean(cv.errors)
+test_mse.5
+
+fit.lm5 <- lm(pm2.5 ~ poly(PC1,4) + poly(PC2,3) + PC3 + PC4 + cbwd, data=dataPCA)
+summary(fit.lm5)
+
+# Test MSE = 1.284531
+# p-value < 2.2e-16 
+# Adj R^2 = 0.12
+
+
+##################################################################################################
+###############   6th model: pm2.5 ~ poly(PC1,4) + poly(PC2,4) + PC3 + PC4 + cbwd    #############
+##################################################################################################
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm(pm2.5 ~ poly(PC1,4) + poly(PC2,4) + PC3 + PC4 + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,4) + poly(PC2,4) + PC3 + PC4 + cbwd, data=testData)
+    
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
+     
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
+}
+test_mse.6 = mean(cv.errors)
+test_mse.6
+
+fit.lm6 <- lm(pm2.5 ~ poly(PC1,4) + poly(PC2,4) + PC3 + PC4 + cbwd, data=dataPCA)
+summary(fit.lm6)
+
+# Test MSE = 1.284531
+# p-value < 2.2e-16 
+# Adj R^2 = 0.1231
+
+##################################################################################################
+###############   7th model: pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,2) + PC4 + cbwd    #############
+##################################################################################################
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,2) + PC4 + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,2) + PC4 + cbwd, data=testData)
+    
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
+     
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
+}
+test_mse.7 = mean(cv.errors)
+test_mse.7
+
+fit.lm7 <- lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) +  poly(PC3,2) + PC4 + cbwd, data=dataPCA)
+summary(fit.lm7)
+
+# Test MSE = 1.284531
+# p-value < 2.2e-16 
+# Adj R^2 = 0.1048
+
+##################################################################################################
+###############   8th model: pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,2) + poly(PC4,2) + cbwd    #############
+##################################################################################################
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,2) + poly(PC4,2) + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,2) + poly(PC4,2) + cbwd, data=testData)
+    
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
+     
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
+}
+test_mse.8 = mean(cv.errors)
+test_mse.8
+
+fit.lm8 <- lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) +  poly(PC3,2) + poly(PC4,2) + cbwd, data=dataPCA)
+summary(fit.lm8)
+
+# Test MSE = 1.284531
+# p-value < 2.2e-16 
+# Adj R^2 = 0.1316
+
+
+
+##################################################################################################
+###############   9th model: pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,3) + PC4 + cbwd    #############
+##################################################################################################
+
+for(i in 1:10){
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- cv.data[testIndexes, ]
+    trainData <- cv.data[-testIndexes, ]
+   
+    pred <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,3) + PC4 + cbwd, data=trainData)
+    y    <-  lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) + poly(PC3,3) + PC4 + cbwd, data=testData)
+    
+    pred_pm2.5.predict <- predict(pred,trainData)
+    y_pm2.5.predict    <- predict(y,testData)
+     
+    pred_pm2.5   = mean(pred_pm2.5.predict)
+    y_pm2.5      = mean(y_pm2.5.predict)
+    cv.errors[i] = mean((y_pm2.5-pred_pm2.5)^2)
+}
+test_mse.9 = mean(cv.errors)
+test_mse.9
+
+fit.lm9 <- lm(pm2.5 ~ poly(PC1,2) + poly(PC2,2) +  poly(PC3,2) + poly(PC3,3) + PC4, data=dataPCA)
+summary(fit.lm9)
+
+# Test MSE = 1.284531
+# p-value < 2.2e-16 
+# Adj R^2 = 0.1316
 
 
 # The following code is found by using library
